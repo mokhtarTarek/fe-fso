@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
-//togglable component : reusible
-const Togglable = (props) => {
+import React, { useState,useImperativeHandle } from 'react'
+import propTypes from 'prop-types'
+
+const Togglable = React.forwardRef((props,ref) => {
 
     const [visible, setVisible] = useState(false)
    /*this component render 2 div where the visibilty (display attribut) is controlled by 2 buttons : 
@@ -14,22 +15,30 @@ const Togglable = (props) => {
     const toggleVisibility = () => {
         setVisible(!visible)
     }
+    useImperativeHandle(ref,()=>{
+        return{
+            toggleVisibility
+        }
+    })
+    Togglable.propTypes={
+        buttonLabel: propTypes.string.isRequired
+    }
+
     return (
         <div>
             <div style={showWhenVisibleIsFalse}>
                 <button onClick={toggleVisibility}>{props.buttonLabel}</button>
             </div>
-            <div style={showWhenVisibleIsTrue}>
+            <div style={showWhenVisibleIsTrue} className="togglableContent">
                 {props.children}
                 <button onClick={toggleVisibility}>cancel</button>
             </div>
         </div>
     )
-}
-
+})
+Togglable.displayName = 'Togglable'
 export default Togglable
-/*props.children
-is available on every component. 
+/*props.children is available on every component. 
 It contains the content between the opening and closing tags of a component
 <Welcome>Hello world!</Welcome>
 The string Hello world! is available in props.children in the Welcome component:

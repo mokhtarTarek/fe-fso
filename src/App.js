@@ -1,27 +1,23 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect,useRef } from 'react'
 import Note from './components/Note'
 import Notification from './components/Notification'
 import Footer from './components/Footer'
-import noteService from './services/notes'
-import loginService from './services/login'
-import LoginForm from "./components/Login";
+import LoginForm from "./components/LoginForm";
 import Togglable from './components/Togglable'
 import NoteForm from './components/NoteForm'
-
-
+import noteService from './services/notes'
+import loginService from './services/login'
 const App = () => {
+  //-------------------------------------FIRST RENDER-------------------------------------------------------------------
   const [notes, setNotes] = useState([])
-  const [newNote, setNewNote] = useState('')
   const [showAll, setShowAll] = useState(true)
   const [errorMessage, setErrorMessage] = useState(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-  //const [loginVisible, setLoginVisible] = useState(false)
-
-  //effecthook : used to fetch data from the server
-  /*the empty [] of the prop ensure that the effect only executed
-  only when the comp is rendred for first time*/
+  const noteFormRef = useRef()
+//--------------------------------FETCH NOTES AND LOCAL STORAGE-------------------------------------------------------
+  //fetch notes
   useEffect(() => {
     noteService
       .getAll()
@@ -29,7 +25,7 @@ const App = () => {
         setNotes(initialNotes)
       })
   }, [])
-  //fetch Local storage
+  //fetch token : win local storage
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedNoteappUser')
     if (loggedUserJSON) {
@@ -37,44 +33,9 @@ const App = () => {
       setUser(user)
       noteService.setToken(user.token)
     }
-  }, [])//user is not null and stay logged-in forever !!
-  //window.localStorage.removeItem('loggedNoteappUser')
-  //or window.localStorage.clear
-  const addNote = (event) => {
-    event.preventDefault()
-    const noteObject = {
-      content: newNote,
-      date: new Date().toISOString(),
-      important: Math.random() > 0.5,
-      id: notes.length + 1,
-    }
-    noteService
-      .create(noteObject)
-      .then(returnedNote => {
-        setNotes(notes.concat(returnedNote))
-        setNewNote('')
-      })
-  }
+  }, [])
 
-  const toggleImportanceOf = (id) => {
-    const note = notes.find(n => n.id === id)
-    const changedNote = { ...note, important: !note.important }
-
-    noteService
-      .update(id, changedNote)
-      .then(returnedNote => {
-        setNotes(notes.map(note => note.id !== id ? note : returnedNote))
-      })
-      .catch(error => {
-        setErrorMessage(
-          `Note '${note.content}' was already removed from server`
-        )
-        setTimeout(() => {
-          setErrorMessage(null)
-        }, 5000)
-      })
-  }
-
+  //-----------------------------------------HELPER FUNCTION------------------------------------------------------------
   const handleLogin = async (event) => {
     event.preventDefault()
     //console.log( username, password)
@@ -103,14 +64,8 @@ const App = () => {
 
     }
   }
-
-  const handleNoteChange = (event) => {
-    //à comprendre
-    setNewNote(event.target.value)
-  }
-  //implementing loginform component
   const loginForm = () =>
-     (
+  (
     <Togglable buttonLabel='login'>
       <LoginForm
         username={username}
@@ -121,24 +76,52 @@ const App = () => {
       />
     </Togglable>
   )
-  
   const noteForm = () => (
 
-    <Togglable buttonLabel="new Note">
-      <NoteForm
-        onSubmit={addNote}
-        value={newNote}
-        handleChange={handleNoteChange}
-      />
+    <Togglable buttonLabel="new Note" ref={noteFormRef}>
+      <NoteForm createNote={addNote} />
     </Togglable>
-    
+
   )
+  //--------------------------------------FUNCTION RELATED TO EVENTS--------------------------------------------
+  
+  const addNote = (noteObject) => {
+    noteFormRef.current.toggleVisibility()
+    noteService
+      .create(noteObject)
+      .then(returnedNote => {
+        setNotes(notes.concat(returnedNote))
+      })
+  }
+
+  const toggleImportanceOf = (id) => {
+    const note = notes.find(n => n.id === id)
+    const changedNote = { ...note, important: !note.important }
+
+    noteService
+      .update(id, changedNote)
+      .then(returnedNote => {
+        setNotes(notes.map(note => note.id !== id ? note : returnedNote))
+      })
+      .catch(error => {
+        setErrorMessage(
+          `Note '${note.content}' was already removed from server`
+        )
+        setTimeout(() => {
+          setErrorMessage(null)
+        }, 5000)
+      })
+  }
+
+  //FILTER NOTES
 
   const notesToShow = showAll ? notes : notes.filter(note => note.important)
+
+  //--------------------------------------------------JSX--------------------------------------------------------------
   return (
     <div>
       <h1>Notes</h1>
-     
+
       <Notification message={errorMessage} />
 
       {/*conditionaly render helper components */}
