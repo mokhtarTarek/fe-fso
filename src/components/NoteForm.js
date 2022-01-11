@@ -4,7 +4,7 @@ const NoteForm = ({ createNote }) => {
   const [newNote, setNewNote] = useState('')
   
   const handleChange = (event) => {
-    setNewNote(event.target.value)//OnChange.target.value: get the input value
+    setNewNote(event.target.value)//e.target.value: get the input value
   }
 
   const addNote = (event) => {
